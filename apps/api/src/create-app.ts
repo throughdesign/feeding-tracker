@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
+import type { NextFunction, Request, Response } from "express";
 import { AppModule } from "./app.module.js";
 import { ApiExceptionFilter } from "./common/api-exception.filter.js";
 
@@ -21,7 +22,7 @@ export async function createApp(options: { dataFile: string; logger?: false }) {
   if (existsSync(webDist)) {
     app.useStaticAssets(webDist);
     // SPA fallback: serve index.html for routes that are not /api/...
-    app.use((req: any, res: any, next: any) => {
+    app.use((req: Request, res: Response, next: NextFunction) => {
       if (req.path.startsWith("/api")) {
         next();
       } else {
