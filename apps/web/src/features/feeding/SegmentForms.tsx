@@ -17,7 +17,7 @@ import { z } from "zod";
 import { DateTimeField } from "../../components/DateTimeField";
 import { VolumeField } from "../../components/VolumeField";
 import { clearDraft, loadDraft, useDraft } from "../../hooks/useDraft";
-import { breastLabel, formatMinutes, milkTypeLabel } from "../../lib/format";
+import { breastLabel, formatMinutes, formatMl, milkTypeLabel } from "../../lib/format";
 import {
   endNotBeforeStart,
   localDateTime,
@@ -48,13 +48,20 @@ function Choice<T extends string>({
         value={[value]}
         selectionMode="single"
         selectedColor="primary"
+        selectedVariant="solid"
         attributes={{ "aria-label": label, role: "radiogroup", id: name }}
         onChange={({ value: next }) => {
           if (next[0]) onChange(next[0] as T);
         }}
       >
         {options.map((option) => (
-          <ToggleButton key={option.value} value={option.value} size="large" fullWidth>
+          <ToggleButton
+            key={option.value}
+            value={option.value}
+            size="large"
+            fullWidth
+            icon={option.value === value ? Check : undefined}
+          >
             {option.label}
           </ToggleButton>
         ))}
@@ -67,17 +74,11 @@ function Choice<T extends string>({
 // Bottle
 // ---------------------------------------------------------------------------
 
-const BottleSchema = z
-  .object({
-    milkType: BottleMilkTypeSchema,
-    offered: requiredVolume,
-    consumed: requiredVolume,
-    at: localDateTime,
-  })
-  .refine((v) => Number(v.consumed) <= Number(v.offered), {
-    path: ["consumed"],
-    message: "Cannot be more than was offered",
-  });
+const BottleSchema = z.object({
+  milkType: BottleMilkTypeSchema,
+  consumed: requiredVolume,
+  at: localDateTime,
+});
 
 type BottleValues = z.infer<typeof BottleSchema>;
 
@@ -106,13 +107,11 @@ export function BottleForm({
     defaultValues: initial
       ? {
           milkType: initial.milkType,
-          offered: String(initial.offeredMl),
           consumed: String(initial.consumedMl),
           at: toZonedInputValue(initial.startedAt),
         }
       : (draftKey && loadDraft<BottleValues>(draftKey)) || {
           milkType: defaultMilkType,
-          offered: "",
           consumed: "",
           at: toZonedInputValue(createdAt),
         },
@@ -126,7 +125,10 @@ export function BottleForm({
       ...initial,
       type: "bottle",
       milkType: values.milkType,
-      offeredMl: Number(values.offered),
+      // Only the amount consumed is entered. New bottles store it as the offered
+      // amount too (the API requires both); edits keep the historical offered
+      // amount unless the corrected amount exceeds it.
+      offeredMl: Math.max(initial?.offeredMl ?? 0, Number(values.consumed)),
       consumedMl: Number(values.consumed),
       startedAt: at,
       endedAt:
@@ -160,38 +162,24 @@ export function BottleForm({
             />
           )}
         />
-        <View direction="row" gap={3}>
-          <View.Item columns={6}>
-            <Controller
-              control={control}
-              name="offered"
-              render={({ field, fieldState }) => (
-                <VolumeField
-                  name={field.name}
-                  label="Offered"
-                  value={field.value}
-                  onChange={field.onChange}
-                  error={fieldState.error?.message}
-                />
-              )}
+        <Controller
+          control={control}
+          name="consumed"
+          render={({ field, fieldState }) => (
+            <VolumeField
+              name={field.name}
+              label="Amount consumed"
+              value={field.value}
+              onChange={field.onChange}
+              error={fieldState.error?.message}
+              helper={
+                initial && initial.offeredMl !== initial.consumedMl
+                  ? `${formatMl(initial.offeredMl)} was offered (kept from the original entry).`
+                  : undefined
+              }
             />
-          </View.Item>
-          <View.Item columns={6}>
-            <Controller
-              control={control}
-              name="consumed"
-              render={({ field, fieldState }) => (
-                <VolumeField
-                  name={field.name}
-                  label="Drank"
-                  value={field.value}
-                  onChange={field.onChange}
-                  error={fieldState.error?.message}
-                />
-              )}
-            />
-          </View.Item>
-        </View>
+          )}
+        />
         <Controller
           control={control}
           name="at"
@@ -333,8 +321,8 @@ export function BreastForm({
             />
           )}
         />
-        <View direction="row" gap={3}>
-          <View.Item columns={6}>
+        <View direction="row" gap={3} wrap>
+          <View.Item columns={{ s: 12, m: 6 }}>
             <Controller
               control={control}
               name="startedAt"
@@ -349,7 +337,7 @@ export function BreastForm({
               )}
             />
           </View.Item>
-          <View.Item columns={6}>
+          <View.Item columns={{ s: 12, m: 6 }}>
             <Controller
               control={control}
               name="endedAt"

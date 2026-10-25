@@ -4,7 +4,7 @@ A calm, mobile-first web app for two parents to track **Isaac's feeding**: when 
 
 - Feedings combine direct breastfeeding (timed per breast) and bottles of expressed breast milk or formula.
 - Direct breastfeeding is recorded as **time per breast only**. Its volume is unknown and is never estimated.
-- Bottle feeds record offered and consumed volume.
+- Bottle feeds record the amount Isaac drank. The API still stores `offeredMl` and `consumedMl`: new bottles store the entered amount as both, and older entries keep their original offered amount.
 - The next feeding is calculated automatically from the last feeding's start time.
 
 > **Scope note:** the app used to track pumping (milk expression) too. That has been removed from the app's screens, but the API and the data file still support it, so existing pumping records are kept and nothing was migrated. See [Retained pumping backend](#retained-pumping-backend).

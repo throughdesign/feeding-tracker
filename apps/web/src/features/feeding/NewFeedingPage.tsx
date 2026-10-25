@@ -1,5 +1,5 @@
 import { startBreast, type BreastSide } from "@isaac/shared";
-import { Baby, Check, Milk, Timer } from "lucide-react";
+import { Baby, Check, History, Milk, X } from "lucide-react";
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { Button, Divider, Icon, Loader, Tabs, Text, View, useToast } from "reshaped";
@@ -8,14 +8,15 @@ import { PageHeader } from "../../components/PageHeader";
 import { useActiveFeeding, useCreateFeeding } from "../../lib/queries";
 import { BottleForm, BreastForm } from "./SegmentForms";
 
-type Mode = "breast" | "bottle" | "past";
+type Mode = "bottle" | "breast";
 
 export function NewFeedingPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const active = useActiveFeeding();
   const create = useCreateFeeding();
-  const [mode, setMode] = useState<Mode>("breast");
+  const [mode, setMode] = useState<Mode>("bottle");
+  const [loggingEarlier, setLoggingEarlier] = useState(false);
   const [startingSide, setStartingSide] = useState<BreastSide | null>(null);
 
   if (active.isPending) return <Loader ariaLabel="Loading" />;
@@ -37,7 +38,7 @@ export function NewFeedingPage() {
 
   return (
     <View gap={6}>
-      <PageHeader title="Log feeding" subtitle="What did Isaac have?" />
+      <PageHeader title="New feeding" subtitle="How is Isaac being fed?" />
 
       <Tabs
         value={mode}
@@ -46,21 +47,18 @@ export function NewFeedingPage() {
         itemWidth="equal"
       >
         <Tabs.List>
-          <Tabs.Item value="breast" icon={Baby}>
-            Breast
-          </Tabs.Item>
           <Tabs.Item value="bottle" icon={Milk}>
             Bottle
           </Tabs.Item>
-          <Tabs.Item value="past" icon={Timer}>
-            Earlier
+          <Tabs.Item value="breast" icon={Baby}>
+            Breast
           </Tabs.Item>
         </Tabs.List>
       </Tabs>
 
       <ErrorAlert
         error={create.error}
-        title={mode === "breast" ? "Could not start" : "Could not save"}
+        title={mode === "breast" && !loggingEarlier ? "Could not start" : "Could not save"}
       />
 
       {mode === "breast" && (
@@ -88,6 +86,55 @@ export function NewFeedingPage() {
               </View.Item>
             ))}
           </View>
+
+          {loggingEarlier ? (
+            <View gap={4} paddingTop={2}>
+              <Divider />
+              <View direction="row" align="center" gap={2}>
+                <View.Item grow>
+                  <Text variant="body-1" weight="bold">
+                    Log earlier breastfeeding
+                  </Text>
+                </View.Item>
+                <Button
+                  variant="ghost"
+                  icon={X}
+                  attributes={{ "aria-label": "Close earlier breastfeeding form" }}
+                  onClick={() => setLoggingEarlier(false)}
+                />
+              </View>
+              <Text variant="body-2" color="neutral-faded">
+                Forgot to start the timer? Enter the times here. You can add the other breast or a
+                bottle on the next screen.
+              </Text>
+              <BreastForm
+                submitLabel="Save breastfeeding"
+                onSubmit={async (segment) => {
+                  const feeding = await create.mutateAsync({
+                    status: "completed",
+                    segments: [segment],
+                  });
+                  toast.show({
+                    color: "positive",
+                    icon: Check,
+                    text: "Breastfeeding saved",
+                    timeout: "short",
+                  });
+                  navigate(`/feeding/${feeding.id}`, { replace: true });
+                }}
+              />
+            </View>
+          ) : (
+            <Button
+              size="large"
+              variant="outline"
+              fullWidth
+              icon={History}
+              onClick={() => setLoggingEarlier(true)}
+            >
+              Log earlier
+            </Button>
+          )}
         </View>
       )}
 
@@ -100,32 +147,6 @@ export function NewFeedingPage() {
             saved("Bottle feeding saved");
           }}
         />
-      )}
-
-      {mode === "past" && (
-        <View gap={4}>
-          <Text color="neutral-faded">
-            Forgot to start the timer? Enter the times here. You can add the other breast or a
-            bottle on the next screen.
-          </Text>
-          <Divider />
-          <BreastForm
-            submitLabel="Save breastfeeding"
-            onSubmit={async (segment) => {
-              const feeding = await create.mutateAsync({
-                status: "completed",
-                segments: [segment],
-              });
-              toast.show({
-                color: "positive",
-                icon: Check,
-                text: "Breastfeeding saved",
-                timeout: "short",
-              });
-              navigate(`/feeding/${feeding.id}`, { replace: true });
-            }}
-          />
-        </View>
       )}
     </View>
   );

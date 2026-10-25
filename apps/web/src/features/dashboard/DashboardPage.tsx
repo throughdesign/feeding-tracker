@@ -105,7 +105,7 @@ export function DashboardPage() {
             icon={Baby}
             onClick={() => navigate("/feeding/new")}
           >
-            {query.data.activeFeeding ? "Open feeding" : "Log feeding"}
+            {query.data.activeFeeding ? "Open feeding" : "New feeding"}
           </Button>
 
           <DaySummary dashboard={query.data} />

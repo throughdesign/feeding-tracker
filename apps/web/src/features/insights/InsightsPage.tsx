@@ -99,7 +99,7 @@ export function InsightsPage() {
             Insights appear here once there are feedings in this period.
           </Text>
           <Button variant="outline" icon={Baby} onClick={() => navigate("/feeding/new")}>
-            Log feeding
+            New feeding
           </Button>
         </View>
       )}

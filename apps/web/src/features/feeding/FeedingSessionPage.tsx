@@ -56,7 +56,7 @@ import {
   milkTypeLabel,
 } from "../../lib/format";
 import { useDeleteFeeding, useFeeding, useUpdateFeeding } from "../../lib/queries";
-import { feedingTitle } from "../timeline/describe";
+import { bottleAmount, feedingTitle } from "../timeline/describe";
 import { BottleForm, BreastForm } from "./SegmentForms";
 
 type Editing = { type: "bottle" | "breastfeeding"; index: number | null } | null;
@@ -443,7 +443,7 @@ function SegmentRow({
     : `${milkTypeLabel[segment.milkType]} bottle`;
   const detail = isBreast
     ? `${formatMinutes(breastfeedingDurationMs(segment, now))}${segment.pauses.length ? ` · ${segment.pauses.length} pause${segment.pauses.length > 1 ? "s" : ""}` : ""} · volume not measured`
-    : `Drank ${formatMl(segment.consumedMl)} of ${formatMl(segment.offeredMl)} offered`;
+    : bottleAmount(segment).replace(/^d/, "D");
 
   return (
     <Card padding={3}>

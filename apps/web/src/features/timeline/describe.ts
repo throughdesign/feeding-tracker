@@ -1,6 +1,14 @@
 import { breastfeedingDurationMs, type FeedingWithSummary } from "@isaac/shared";
 import { breastLabel, formatMinutes, formatMl, milkTypeLabel } from "../../lib/format";
 
+/** "drank 60 ml", plus the offered amount when older entries recorded more. */
+export function bottleAmount(segment: { consumedMl: number; offeredMl: number }): string {
+  const drank = `drank ${formatMl(segment.consumedMl)}`;
+  return segment.offeredMl > segment.consumedMl
+    ? `${drank} of ${formatMl(segment.offeredMl)} offered`
+    : drank;
+}
+
 /** Short type label that does not rely on color, e.g. "Breastfeeding + formula". */
 export function feedingTitle(feeding: FeedingWithSummary): string {
   const parts: string[] = [];
@@ -24,6 +32,6 @@ export function feedingDetails(feeding: FeedingWithSummary, now: number): string
       const running = segment.endedAt === null ? " (running)" : "";
       return `${breastLabel[segment.breast]} breast ${formatMinutes(breastfeedingDurationMs(segment, now))}${running}${pauses}`;
     }
-    return `${milkTypeLabel[segment.milkType]}: drank ${formatMl(segment.consumedMl)} of ${formatMl(segment.offeredMl)}`;
+    return `${milkTypeLabel[segment.milkType]}: ${bottleAmount(segment)}`;
   });
 }
