@@ -1,7 +1,6 @@
 import type {
   ApiErrorBody,
   CreateFeedingSessionInput,
-  CreatePumpingSessionInput,
   Dashboard,
   FeedingScheduleSettings,
   NextFeeding,
@@ -9,9 +8,7 @@ import type {
   InsightPeriod,
   Insights,
   FeedingWithSummary,
-  PumpingWithTotal,
   UpdateFeedingSessionInput,
-  UpdatePumpingSessionInput,
 } from "@isaac/shared";
 
 export class ApiError extends Error {
@@ -76,11 +73,4 @@ export const api = {
   updateFeeding: (id: string, input: UpdateFeedingSessionInput) =>
     request<FeedingWithSummary>(`/feedings/${id}`, json("PATCH", input)),
   deleteFeeding: (id: string) => request<void>(`/feedings/${id}`, { method: "DELETE" }),
-
-  pumping: (id: string) => request<PumpingWithTotal>(`/pumping-sessions/${id}`),
-  createPumping: (input: CreatePumpingSessionInput) =>
-    request<PumpingWithTotal>("/pumping-sessions", json("POST", input)),
-  updatePumping: (id: string, input: UpdatePumpingSessionInput) =>
-    request<PumpingWithTotal>(`/pumping-sessions/${id}`, json("PATCH", input)),
-  deletePumping: (id: string) => request<void>(`/pumping-sessions/${id}`, { method: "DELETE" }),
 };

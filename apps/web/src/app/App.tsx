@@ -5,7 +5,6 @@ import { Loader, Reshaped, View, type ColorMode } from "reshaped";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { FeedingSessionPage } from "../features/feeding/FeedingSessionPage";
 import { NewFeedingPage } from "../features/feeding/NewFeedingPage";
-import { PumpingFormPage } from "../features/pumping/PumpingFormPage";
 import { HistoryPage } from "../features/timeline/HistoryPage";
 import { AppShell, COLOR_MODE_KEY } from "./AppShell";
 import { NotFoundPage } from "./NotFoundPage";
@@ -44,8 +43,6 @@ const router = createBrowserRouter([
       },
       { path: "feeding/new", element: <NewFeedingPage /> },
       { path: "feeding/:id", element: <FeedingSessionPage /> },
-      { path: "pumping/new", element: <PumpingFormPage /> },
-      { path: "pumping/:id", element: <PumpingFormPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

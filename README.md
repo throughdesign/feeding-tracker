@@ -1,13 +1,14 @@
 # Isaac's Feeding Tracker
 
-A calm, mobile-first web app for two parents to track Isaac's feedings and Mother's breast milk expression. It runs locally and stores everything in a single JSON file on your machine.
+A calm, mobile-first web app for two parents to track **Isaac's feeding**: when and how he was fed, how much measured milk he drank, and when the next feeding is due. It runs locally and stores everything in a single JSON file on your machine.
 
-It keeps **extraction** (pumping) separate from **consumption** (feeding):
+- Feedings combine direct breastfeeding (timed per breast) and bottles of expressed breast milk or formula.
+- Direct breastfeeding is recorded as **time per breast only**. Its volume is unknown and is never estimated.
+- Bottle feeds record offered and consumed volume.
+- The next feeding is calculated automatically from the last feeding's start time.
 
-- Mother and Isaac are people. Feeding and pumping are events. Milk is a resource.
-- Pumping records left and right volumes separately. The total is always derived, and "not measured" (`null`) is distinct from `0 ml`.
-- Direct breastfeeding is recorded as **time per breast only**. Its volume is unknown and is never estimated from duration or from pumped volumes.
-- Bottle feeds record offered and consumed volume, for expressed milk or formula.
+> **Scope note:** the app used to track pumping (milk expression) too. That has been removed from the app's screens, but the API and the data file still support it, so existing pumping records are kept and nothing was migrated. See [Retained pumping backend](#retained-pumping-backend).
+
 - A feeding session can combine segments, e.g. left → right → formula supplement.
 
 ## Requirements
@@ -75,7 +76,6 @@ isaac-feeding/
 │   │       │   ├── dashboard/   Today screen and day summary
 │   │       │   ├── feeding/     New feeding, live timer, segment forms
 │   │       │   ├── insights/    Insights charts (Recharts), rhythm view, table views
-│   │       │   ├── pumping/     Pumping form (create/edit)
 │   │       │   └── timeline/    Timeline and history screen
 │   │       ├── hooks/           useNow (timer ticks), useDraft (unsaved input)
 │   │       ├── lib/             API client, TanStack Query hooks, formatting
@@ -160,7 +160,9 @@ Rules:
 - Session `startedAt`/`endedAt` are derived from the segments.
 - `milkBatchId` must reference an existing batch whose source matches the milk type.
 
-### Pumping sessions
+### Pumping sessions (API only)
+
+These endpoints are kept for data compatibility; the app no longer shows or creates pumping records.
 
 ```text
 GET    /api/pumping-sessions          ?date=YYYY-MM-DD
@@ -244,10 +246,7 @@ The remaining time is recalculated from the clock every second and when the app 
 
 ## Insights screen
 
-The third tab shows charts for the last 7 or 14 days, split into **Feeding** and **Pumping** views:
-
-- **Feeding:** total measured bottle consumption and breastfeeding minutes; a stacked daily chart of expressed milk vs. formula; daily breastfeeding minutes; and a 24-hour rhythm showing when each feeding happened.
-- **Pumping:** total measured volume and session count; a stacked daily chart of left vs. right; and a daily trend line. Days with an unmeasured side are marked with **?** in the bar chart and a hollow point on the trend line; the bars and line show measured volume only.
+The third tab shows feeding charts for the last 7 or 14 days: total measured bottle consumption and breastfeeding minutes, a stacked daily chart of expressed milk vs. formula, daily breastfeeding minutes, and a 24-hour rhythm showing when each feeding happened.
 
 Every chart has a **Table** toggle with the exact numbers, for accessibility and for checking values. Tooltips work by tap on mobile. Chart colors are the validated categorical slots (blue, orange, aqua), with separate light and dark steps. Text, grid and surfaces use Reshaped tokens.
 
@@ -291,11 +290,22 @@ pnpm test
 - **Reshaped (slate theme)** is the only UI library. Light and dark mode follow the system preference and can be toggled; the choice is remembered on the device.
 - **Live timers** are stored as timestamps on the server (segments with pauses). The UI derives elapsed time from those timestamps every second, so timers stay correct after a reload, sleep, or on the other parent's device. An in-progress feeding is restored from `GET /api/feedings?status=active`.
 - **Timer transitions** (start, pause, resume, switch, stop, finish) are pure functions in `packages/shared`. The client applies them at the moment of the tap and PATCHes the resulting segment list; the server validates every invariant.
-- **Unsaved input** for new pumping and bottle entries is kept in `localStorage` for up to 3 hours, so an accidental reload doesn't lose it.
+- **Unsaved input** for new bottle entries is kept in `localStorage` for up to 3 hours, so an accidental reload doesn't lose it.
 - **Repository abstraction:** services depend on `Repository<T>` interfaces (`apps/api/src/persistence/repositories.ts`), so the JSON store can be replaced with SQLite or PostgreSQL without touching services or controllers.
 - **Charts** use Recharts 3 (React 19 compatible, `responsive` sizing, built-in keyboard layer). The 24-hour rhythm is plain HTML so each feeding is a tappable, labelled button.
 - **ESM throughout the backend:** NestJS 12 is ESM-only, so the API and shared package are native ES modules. Nest dependencies are injected with explicit `@Inject(...)` tokens, so the code works under `tsx` and Vitest (esbuild) as well as `tsc`.
 - **TypeScript 6.0** is used instead of 7.x because typescript-eslint doesn't support TypeScript 7 yet.
+
+## Retained pumping backend
+
+Pumping was removed from the screens only. These parts are deliberately kept, so nothing has to be migrated or deleted:
+
+- **Data:** `pumpingSessions` and `milkBatches` stay in the data file schema, and existing records are preserved.
+- **API endpoints:** `/api/pumping-sessions` and `/api/milk-batches` still work.
+- **API responses:** the dashboard response still includes `pumping` totals and pumping items in `timeline`, and the insights response still includes a `pumping` section. The app ignores them.
+- **Shared code:** pumping schemas and calculations, and their tests, remain in `packages/shared`.
+
+A later cleanup could remove these together with a deliberate data migration.
 
 ## Known MVP limitations
 

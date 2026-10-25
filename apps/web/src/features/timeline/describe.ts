@@ -1,16 +1,5 @@
-import {
-  breastfeedingDurationMs,
-  type FeedingWithSummary,
-  type PumpingWithTotal,
-} from "@isaac/shared";
-import {
-  breastLabel,
-  formatMinutes,
-  formatMl,
-  formatPumpingTotal,
-  formatVolume,
-  milkTypeLabel,
-} from "../../lib/format";
+import { breastfeedingDurationMs, type FeedingWithSummary } from "@isaac/shared";
+import { breastLabel, formatMinutes, formatMl, milkTypeLabel } from "../../lib/format";
 
 /** Short type label that does not rely on color, e.g. "Breastfeeding + formula". */
 export function feedingTitle(feeding: FeedingWithSummary): string {
@@ -37,11 +26,4 @@ export function feedingDetails(feeding: FeedingWithSummary, now: number): string
     }
     return `${milkTypeLabel[segment.milkType]}: drank ${formatMl(segment.consumedMl)} of ${formatMl(segment.offeredMl)}`;
   });
-}
-
-export function pumpingDetails(pumping: PumpingWithTotal): string[] {
-  return [
-    `Left ${formatVolume(pumping.leftVolumeMl)} · Right ${formatVolume(pumping.rightVolumeMl)}`,
-    `Total ${formatPumpingTotal(pumping.total)}`,
-  ];
 }

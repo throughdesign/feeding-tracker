@@ -1,48 +1,33 @@
-import type { TimelineItem } from "@isaac/shared";
-import { Baby, Droplets, Milk, Pencil, Trash2 } from "lucide-react";
+import type { FeedingWithSummary } from "@isaac/shared";
+import { Baby, Milk, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { Badge, Button, Card, Icon, Text, View } from "reshaped";
 import { formatTimeRange } from "../../lib/format";
-import { feedingDetails, feedingTitle, pumpingDetails } from "./describe";
+import { feedingDetails, feedingTitle } from "./describe";
 
 type Props = {
-  item: TimelineItem;
+  feeding: FeedingWithSummary;
   now: number;
-  onDelete?: (item: TimelineItem) => void;
+  onDelete?: (feeding: FeedingWithSummary) => void;
 };
 
-export function TimelineEntry({ item, now, onDelete }: Props) {
+export function TimelineEntry({ feeding, now, onDelete }: Props) {
   const navigate = useNavigate();
-  const isFeeding = item.kind === "feeding";
-  const feeding = isFeeding ? item.feeding : null;
-  const pumping = isFeeding ? null : item.pumping;
-
-  const title = feeding ? feedingTitle(feeding) : "Pumping";
-  const category = feeding ? "Isaac fed" : "Milk expressed";
-  const icon = feeding ? (feeding.summary.hasBreastfeeding ? Baby : Milk) : Droplets;
-  const details = feeding ? feedingDetails(feeding, now) : pumpingDetails(pumping!);
-  const endedAt = feeding ? feeding.endedAt : pumping!.endedAt;
-  const href = feeding ? `/feeding/${item.id}` : `/pumping/${item.id}`;
-  const active = feeding?.status === "active";
+  const title = feedingTitle(feeding);
+  const time = formatTimeRange(feeding.startedAt, feeding.endedAt);
+  const active = feeding.status === "active";
 
   return (
     <Card padding={4}>
       <View direction="row" gap={3} align="start">
-        <View
-          padding={2}
-          borderRadius="medium"
-          backgroundColor={feeding ? "primary-faded" : "neutral-faded"}
-        >
-          <Icon svg={icon} size={5} color={feeding ? "primary" : "neutral"} />
+        <View padding={2} borderRadius="medium" backgroundColor="primary-faded">
+          <Icon svg={feeding.summary.hasBreastfeeding ? Baby : Milk} size={5} color="primary" />
         </View>
         <View.Item grow>
           <View gap={1}>
             <View direction="row" gap={2} align="center" wrap>
               <Text variant="body-2" weight="medium" color="neutral-faded" numeric>
-                {formatTimeRange(item.startedAt, endedAt)}
-              </Text>
-              <Text variant="caption-1" color="neutral-faded">
-                {category}
+                {time}
               </Text>
               {active && (
                 <Badge color="positive" variant="faded" size="small">
@@ -53,14 +38,14 @@ export function TimelineEntry({ item, now, onDelete }: Props) {
             <Text variant="body-1" weight="bold">
               {title}
             </Text>
-            {details.map((line, i) => (
+            {feedingDetails(feeding, now).map((line, i) => (
               <Text key={i} variant="body-2" numeric>
                 {line}
               </Text>
             ))}
-            {(feeding?.notes || pumping?.notes) && (
+            {feeding.notes && (
               <Text variant="body-2" color="neutral-faded">
-                {feeding?.notes || pumping?.notes}
+                {feeding.notes}
               </Text>
             )}
           </View>
@@ -69,19 +54,15 @@ export function TimelineEntry({ item, now, onDelete }: Props) {
           <Button
             variant="ghost"
             icon={Pencil}
-            attributes={{
-              "aria-label": `Edit ${title.toLowerCase()} at ${formatTimeRange(item.startedAt, endedAt)}`,
-            }}
-            onClick={() => navigate(href)}
+            attributes={{ "aria-label": `Edit ${title.toLowerCase()} at ${time}` }}
+            onClick={() => navigate(`/feeding/${feeding.id}`)}
           />
           {onDelete && (
             <Button
               variant="ghost"
               icon={Trash2}
-              attributes={{
-                "aria-label": `Delete ${title.toLowerCase()} at ${formatTimeRange(item.startedAt, endedAt)}`,
-              }}
-              onClick={() => onDelete(item)}
+              attributes={{ "aria-label": `Delete ${title.toLowerCase()} at ${time}` }}
+              onClick={() => onDelete(feeding)}
             />
           )}
         </View>

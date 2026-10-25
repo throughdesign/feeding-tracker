@@ -5,7 +5,7 @@ import {
   openBreastSegment,
   type Dashboard,
 } from "@isaac/shared";
-import { Baby, ChevronRight, Droplets, Milk, Timer } from "lucide-react";
+import { Baby, ChevronRight, Milk, Timer } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { Button, Card, Grid, Icon, Loader, Text, View } from "reshaped";
@@ -91,37 +91,22 @@ export function DashboardPage() {
 
       {query.data && (
         <>
-          <ActiveFeedingCard dashboard={query.data} now={now} />
-
           <NextFeedingCard
             nextFeeding={query.data.nextFeeding}
             onOpenSettings={() => setScheduleOpen(true)}
           />
 
-          <View direction="row" gap={3}>
-            <View.Item columns={6}>
-              <Button
-                size="xlarge"
-                color="primary"
-                fullWidth
-                icon={Baby}
-                onClick={() => navigate("/feeding/new")}
-              >
-                {query.data.activeFeeding ? "Open feeding" : "Log feeding"}
-              </Button>
-            </View.Item>
-            <View.Item columns={6}>
-              <Button
-                size="xlarge"
-                variant="outline"
-                fullWidth
-                icon={Droplets}
-                onClick={() => navigate("/pumping/new")}
-              >
-                Log pumping
-              </Button>
-            </View.Item>
-          </View>
+          <ActiveFeedingCard dashboard={query.data} now={now} />
+
+          <Button
+            size="xlarge"
+            color="primary"
+            fullWidth
+            icon={Baby}
+            onClick={() => navigate("/feeding/new")}
+          >
+            {query.data.activeFeeding ? "Open feeding" : "Log feeding"}
+          </Button>
 
           <DaySummary dashboard={query.data} />
 
@@ -137,7 +122,7 @@ export function DashboardPage() {
             <Timeline
               items={query.data.timeline}
               order="newest-first"
-              emptyText="Nothing logged today yet."
+              emptyText="No feedings logged today yet."
             />
           </View>
         </>
@@ -147,71 +132,47 @@ export function DashboardPage() {
   );
 }
 
-/** Today's totals, split into what Isaac consumed and what Mother expressed. */
+/** Isaac's feeding totals for the day. */
 export function DaySummary({ dashboard }: { dashboard: Dashboard }) {
-  const { feeding, pumping } = dashboard;
-  const pumpedPartial = pumping.sessionsWithUnknownVolume > 0;
+  const { feeding } = dashboard;
   return (
-    <View gap={5}>
-      <View gap={3}>
-        <View direction="row" gap={2} align="center">
-          <Icon svg={Milk} size={5} />
-          <Text as="h2" variant="body-1" weight="bold">
-            Isaac drank
-          </Text>
-        </View>
-        <Grid columns={2} gap={3}>
-          <Stat
-            label="By bottle"
-            value={formatMl(feeding.bottle.consumedMl)}
-            caption={
-              feeding.bottle.count
-                ? `Expressed ${formatMl(feeding.bottle.expressedBreastMilkMl)} · formula ${formatMl(feeding.bottle.formulaMl)}`
-                : "No bottles yet"
-            }
-          />
-          <Stat
-            label="At the breast"
-            value={formatMinutes(feeding.breastfeeding.totalMs)}
-            caption="Volume not measured"
-          />
-          <Stat
-            label="Feedings"
-            value={String(feeding.sessionCount)}
-            caption={
-              feeding.breastfeeding.sessionCount
-                ? `${feeding.breastfeeding.sessionCount} with breastfeeding`
-                : undefined
-            }
-          />
-          <Stat
-            label="Breast sides"
-            value={`L ${Math.round(feeding.breastfeeding.leftMs / 60_000)} · R ${Math.round(feeding.breastfeeding.rightMs / 60_000)}`}
-            caption="minutes per side"
-          />
-        </Grid>
+    <View gap={3}>
+      <View direction="row" gap={2} align="center">
+        <Icon svg={Milk} size={5} />
+        <Text as="h2" variant="body-1" weight="bold">
+          Isaac drank
+        </Text>
       </View>
-
-      <View gap={3}>
-        <View direction="row" gap={2} align="center">
-          <Icon svg={Droplets} size={5} />
-          <Text as="h2" variant="body-1" weight="bold">
-            Mother expressed
-          </Text>
-        </View>
-        <Grid columns={2} gap={3}>
-          <Stat
-            label={pumpedPartial ? "Measured so far" : "Milk expressed"}
-            value={formatMl(pumping.knownVolumeMl)}
-            caption={
-              pumpedPartial
-                ? `${pumping.sessionsWithUnknownVolume} session${pumping.sessionsWithUnknownVolume > 1 ? "s" : ""} not fully measured`
-                : `Left ${formatMl(pumping.leftMl)} · right ${formatMl(pumping.rightMl)}`
-            }
-          />
-          <Stat label="Pumping sessions" value={String(pumping.sessionCount)} />
-        </Grid>
-      </View>
+      <Grid columns={2} gap={3}>
+        <Stat
+          label="By bottle"
+          value={formatMl(feeding.bottle.consumedMl)}
+          caption={
+            feeding.bottle.count
+              ? `Expressed milk ${formatMl(feeding.bottle.expressedBreastMilkMl)} · formula ${formatMl(feeding.bottle.formulaMl)}`
+              : "No bottles yet"
+          }
+        />
+        <Stat
+          label="At the breast"
+          value={formatMinutes(feeding.breastfeeding.totalMs)}
+          caption="Volume not measured"
+        />
+        <Stat
+          label="Feedings"
+          value={String(feeding.sessionCount)}
+          caption={
+            feeding.breastfeeding.sessionCount
+              ? `${feeding.breastfeeding.sessionCount} with breastfeeding`
+              : undefined
+          }
+        />
+        <Stat
+          label="Breast sides"
+          value={`L ${Math.round(feeding.breastfeeding.leftMs / 60_000)} · R ${Math.round(feeding.breastfeeding.rightMs / 60_000)}`}
+          caption="minutes per side"
+        />
+      </Grid>
     </View>
   );
 }

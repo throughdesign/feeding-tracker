@@ -1,4 +1,4 @@
-import type { TimelineItem } from "@isaac/shared";
+import type { FeedingWithSummary, TimelineItem } from "@isaac/shared";
 import { Text, View } from "reshaped";
 import { useNow } from "../../hooks/useNow";
 import { TimelineEntry } from "./TimelineEntry";
@@ -7,8 +7,13 @@ type Props = {
   items: TimelineItem[];
   order?: "oldest-first" | "newest-first";
   emptyText?: string;
-  onDelete?: (item: TimelineItem) => void;
+  onDelete?: (feeding: FeedingWithSummary) => void;
 };
+
+/** Feedings in a day's timeline. Pumping items from the API are not shown. */
+export function feedingsOf(items: TimelineItem[]): FeedingWithSummary[] {
+  return items.flatMap((item) => (item.kind === "feeding" ? [item.feeding] : []));
+}
 
 export function Timeline({
   items,
@@ -16,9 +21,10 @@ export function Timeline({
   emptyText = "Nothing logged yet.",
   onDelete,
 }: Props) {
-  const hasActive = items.some((i) => i.kind === "feeding" && i.feeding.status === "active");
+  const feedings = feedingsOf(items);
+  const hasActive = feedings.some((f) => f.status === "active");
   const now = useNow(30_000, hasActive);
-  const sorted = order === "newest-first" ? [...items].reverse() : items;
+  const sorted = order === "newest-first" ? [...feedings].reverse() : feedings;
 
   if (sorted.length === 0) {
     return (
@@ -28,10 +34,10 @@ export function Timeline({
     );
   }
   return (
-    <View as="ol" gap={3} attributes={{ "aria-label": "Activity timeline" }}>
-      {sorted.map((item) => (
-        <View as="li" key={`${item.kind}-${item.id}`}>
-          <TimelineEntry item={item} now={now} onDelete={onDelete} />
+    <View as="ol" gap={3} attributes={{ "aria-label": "Feedings" }}>
+      {sorted.map((feeding) => (
+        <View as="li" key={feeding.id}>
+          <TimelineEntry feeding={feeding} now={now} onDelete={onDelete} />
         </View>
       ))}
     </View>

@@ -1,11 +1,9 @@
 import type {
   CreateFeedingSessionInput,
-  CreatePumpingSessionInput,
   FeedingWithSummary,
   InsightPeriod,
   UpdateFeedingScheduleSettingsInput,
   UpdateFeedingSessionInput,
-  UpdatePumpingSessionInput,
 } from "@isaac/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
@@ -16,7 +14,6 @@ export const keys = {
   dashboard: (date?: string) => ["dashboard", date ?? "today"] as const,
   activeFeeding: ["feedings", "active"] as const,
   feeding: (id: string) => ["feedings", id] as const,
-  pumping: (id: string) => ["pumping", id] as const,
 };
 
 export function useDashboard(date?: string) {
@@ -69,14 +66,6 @@ export function useFeeding(id: string | undefined) {
   });
 }
 
-export function usePumping(id: string | undefined) {
-  return useQuery({
-    queryKey: keys.pumping(id ?? ""),
-    queryFn: () => api.pumping(id!),
-    enabled: Boolean(id),
-  });
-}
-
 function useInvalidateAll() {
   const client = useQueryClient();
   return () =>
@@ -85,7 +74,6 @@ function useInvalidateAll() {
       client.invalidateQueries({ queryKey: ["insights"] }),
       client.invalidateQueries({ queryKey: ["feeding-schedule"] }),
       client.invalidateQueries({ queryKey: ["feedings"] }),
-      client.invalidateQueries({ queryKey: ["pumping"] }),
     ]);
 }
 
@@ -124,25 +112,4 @@ export function useUpdateFeeding(id: string) {
 export function useDeleteFeeding() {
   const invalidate = useInvalidateAll();
   return useMutation({ mutationFn: api.deleteFeeding, onSuccess: () => invalidate() });
-}
-
-export function useCreatePumping() {
-  const invalidate = useInvalidateAll();
-  return useMutation({
-    mutationFn: (input: CreatePumpingSessionInput) => api.createPumping(input),
-    onSuccess: () => invalidate(),
-  });
-}
-
-export function useUpdatePumping(id: string) {
-  const invalidate = useInvalidateAll();
-  return useMutation({
-    mutationFn: (input: UpdatePumpingSessionInput) => api.updatePumping(id, input),
-    onSuccess: () => invalidate(),
-  });
-}
-
-export function useDeletePumping() {
-  const invalidate = useInvalidateAll();
-  return useMutation({ mutationFn: api.deletePumping, onSuccess: () => invalidate() });
 }

@@ -7,8 +7,8 @@ export const localDateTime = z
   .min(1, "Required")
   .refine((v) => fromZonedInputValue(v) !== null, "Enter a valid date and time");
 
-/** Empty string means "not measured"; otherwise a number of ml. */
-export const optionalVolume = z
+/** A number of ml; empty is allowed here and rejected by `requiredVolume`. */
+const optionalVolume = z
   .string()
   .trim()
   .refine(
@@ -18,10 +18,6 @@ export const optionalVolume = z
   .refine((v) => v === "" || Number(v) <= MAX_VOLUME_ML, `At most ${MAX_VOLUME_ML} ml`);
 
 export const requiredVolume = optionalVolume.refine((v) => v !== "", "Required");
-
-export function parseVolume(value: string): number | null {
-  return value.trim() === "" ? null : Number(value);
-}
 
 export function toIso(value: string): string {
   const iso = fromZonedInputValue(value);

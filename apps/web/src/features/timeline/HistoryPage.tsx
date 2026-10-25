@@ -1,4 +1,4 @@
-import { addDays, dateKeyInZone, isValidDateKey, type TimelineItem } from "@isaac/shared";
+import { addDays, dateKeyInZone, isValidDateKey, type FeedingWithSummary } from "@isaac/shared";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
@@ -8,9 +8,9 @@ import { ErrorAlert } from "../../components/ErrorAlert";
 import { useNow } from "../../hooks/useNow";
 import { PageHeader } from "../../components/PageHeader";
 import { formatDateKey, formatTime } from "../../lib/format";
-import { useDashboard, useDeleteFeeding, useDeletePumping } from "../../lib/queries";
+import { useDashboard, useDeleteFeeding } from "../../lib/queries";
 import { DaySummary } from "../dashboard/DashboardPage";
-import { Timeline } from "./Timeline";
+import { Timeline, feedingsOf } from "./Timeline";
 
 export function HistoryPage() {
   const [params, setParams] = useSearchParams();
@@ -20,17 +20,14 @@ export function HistoryPage() {
   const query = useDashboard(date);
   const toast = useToast();
   const deleteFeeding = useDeleteFeeding();
-  const deletePumping = useDeletePumping();
-  const [pendingDelete, setPendingDelete] = useState<TimelineItem | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<FeedingWithSummary | null>(null);
 
   const goTo = (next: string) => setParams(next === today ? {} : { date: next }, { replace: true });
-  const deleting = deleteFeeding.isPending || deletePumping.isPending;
 
   const confirmDelete = () => {
     if (!pendingDelete) return;
-    const mutation = pendingDelete.kind === "feeding" ? deleteFeeding : deletePumping;
-    mutation.mutate(pendingDelete.id, {
-      onSuccess: () => toast.show({ text: "Entry deleted", timeout: "short" }),
+    deleteFeeding.mutate(pendingDelete.id, {
+      onSuccess: () => toast.show({ text: "Feeding deleted", timeout: "short" }),
       onError: (error) => toast.show({ color: "critical", text: error.message }),
       onSettled: () => setPendingDelete(null),
     });
@@ -77,23 +74,23 @@ export function HistoryPage() {
         <>
           <Timeline
             items={query.data.timeline}
-            emptyText="Nothing logged on this day."
+            emptyText="No feedings logged on this day."
             onDelete={setPendingDelete}
           />
-          {query.data.timeline.length > 0 && <DaySummary dashboard={query.data} />}
+          {feedingsOf(query.data.timeline).length > 0 && <DaySummary dashboard={query.data} />}
         </>
       )}
 
       <ConfirmModal
         active={pendingDelete !== null}
-        title={`Delete ${pendingDelete?.kind === "pumping" ? "pumping session" : "feeding"}?`}
+        title="Delete this feeding?"
         text={
           pendingDelete
-            ? `The entry from ${formatTime(pendingDelete.startedAt)} will be removed. This cannot be undone.`
+            ? `The feeding from ${formatTime(pendingDelete.startedAt)} will be removed. This cannot be undone.`
             : ""
         }
         confirmLabel="Delete"
-        loading={deleting}
+        loading={deleteFeeding.isPending}
         onClose={() => setPendingDelete(null)}
         onConfirm={confirmDelete}
       />

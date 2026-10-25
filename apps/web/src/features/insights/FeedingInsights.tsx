@@ -40,7 +40,7 @@ export function FeedingInsights({ insights }: { insights: Insights }) {
         <Stat
           label="Bottle consumption"
           value={formatMl(totals.bottleConsumedMl)}
-          caption={`Expressed ${formatMl(totals.expressedBreastMilkMl)} · formula ${formatMl(totals.formulaMl)}`}
+          caption={`Expressed milk ${formatMl(totals.expressedBreastMilkMl)} · formula ${formatMl(totals.formulaMl)}`}
         />
         <Stat
           label="Direct breastfeeding"
