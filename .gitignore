@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+coverage/
+
+# Runtime family data — never commit
+data/*
+!data/.gitkeep
+!data/sample/
+*.bak
+*.tmp
+.env
+.env.*

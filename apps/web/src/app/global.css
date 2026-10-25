@@ -1,0 +1,6 @@
+/* Recharts' keyboard layer makes charts focusable: keep its focus ring for
+   keyboard users only, not after a tap or click. */
+.recharts-wrapper :focus:not(:focus-visible),
+.recharts-surface:focus:not(:focus-visible) {
+  outline: none;
+}

@@ -1,0 +1,33 @@
+{
+  "name": "isaac-feeding",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Isaac's Feeding Tracker \u2014 local-first feeding and pumping log",
+  "packageManager": "pnpm@11.18.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @isaac/shared build && concurrently -k -n shared,api,web -c gray,blue,magenta \"pnpm --filter @isaac/shared dev\" \"pnpm --filter @isaac/api dev\" \"pnpm --filter @isaac/web dev\"",
+    "build": "pnpm --filter @isaac/shared build && pnpm --filter @isaac/api build && pnpm --filter @isaac/web build",
+    "start": "pnpm --filter @isaac/api start",
+    "test": "pnpm --filter @isaac/shared build && pnpm -r test",
+    "lint": "eslint .",
+    "typecheck": "pnpm --filter @isaac/shared build && pnpm -r typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "data:sample": "node scripts/load-sample-data.mjs",
+    "dev:demo": "pnpm --filter @isaac/shared build && node scripts/generate-demo-data.mjs && DATA_FILE=\"$PWD/data/demo/feeding.json\" pnpm dev"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.6",
+    "eslint": "^10.13.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.0"
+  },
+  "type": "module"
+}
