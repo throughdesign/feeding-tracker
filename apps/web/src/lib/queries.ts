@@ -3,6 +3,7 @@ import type {
   CreatePumpingSessionInput,
   FeedingWithSummary,
   InsightPeriod,
+  UpdateFeedingScheduleSettingsInput,
   UpdateFeedingSessionInput,
   UpdatePumpingSessionInput,
 } from "@isaac/shared";
@@ -10,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 
 export const keys = {
+  feedingSchedule: ["feeding-schedule"] as const,
   insights: (days: number) => ["insights", days] as const,
   dashboard: (date?: string) => ["dashboard", date ?? "today"] as const,
   activeFeeding: ["feedings", "active"] as const,
@@ -31,6 +33,23 @@ export function useInsights(days: InsightPeriod) {
     queryKey: keys.insights(days),
     queryFn: () => api.insights(days),
     refetchInterval: 60_000,
+  });
+}
+
+export function useFeedingSchedule() {
+  return useQuery({ queryKey: keys.feedingSchedule, queryFn: api.feedingSchedule });
+}
+
+export function useUpdateFeedingScheduleSettings() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateFeedingScheduleSettingsInput) =>
+      api.updateFeedingScheduleSettings(input),
+    onSuccess: (view) => {
+      client.setQueryData(keys.feedingSchedule, view);
+      // The dashboard embeds the derived next feeding.
+      void client.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 }
 
@@ -64,6 +83,7 @@ function useInvalidateAll() {
     Promise.all([
       client.invalidateQueries({ queryKey: ["dashboard"] }),
       client.invalidateQueries({ queryKey: ["insights"] }),
+      client.invalidateQueries({ queryKey: ["feeding-schedule"] }),
       client.invalidateQueries({ queryKey: ["feedings"] }),
       client.invalidateQueries({ queryKey: ["pumping"] }),
     ]);

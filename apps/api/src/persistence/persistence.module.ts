@@ -1,7 +1,13 @@
 import { Global, Module, type DynamicModule } from "@nestjs/common";
 import { JsonFileStore } from "./json-file-store.js";
 import { JsonRepository } from "./json-repository.js";
-import { FEEDING_REPOSITORY, MILK_BATCH_REPOSITORY, PUMPING_REPOSITORY } from "./repositories.js";
+import { JsonSettingsRepository } from "./json-settings-repository.js";
+import {
+  FEEDING_REPOSITORY,
+  MILK_BATCH_REPOSITORY,
+  PUMPING_REPOSITORY,
+  SETTINGS_REPOSITORY,
+} from "./repositories.js";
 
 @Global()
 @Module({})
@@ -26,8 +32,19 @@ export class PersistenceModule {
           inject: [JsonFileStore],
           useFactory: (store: JsonFileStore) => new JsonRepository(store, "milkBatches"),
         },
+        {
+          provide: SETTINGS_REPOSITORY,
+          inject: [JsonFileStore],
+          useFactory: (store: JsonFileStore) => new JsonSettingsRepository(store),
+        },
       ],
-      exports: [JsonFileStore, FEEDING_REPOSITORY, PUMPING_REPOSITORY, MILK_BATCH_REPOSITORY],
+      exports: [
+        JsonFileStore,
+        FEEDING_REPOSITORY,
+        PUMPING_REPOSITORY,
+        MILK_BATCH_REPOSITORY,
+        SETTINGS_REPOSITORY,
+      ],
     };
   }
 }

@@ -3,6 +3,7 @@ import { FeedingSessionSchema } from "./feeding.js";
 import { MilkBatchSchema } from "./milk-batch.js";
 import { PersonSchema } from "./person.js";
 import { PumpingSessionSchema } from "./pumping.js";
+import { SettingsSchema } from "./schedule.js";
 
 export const CURRENT_SCHEMA_VERSION = 1;
 
@@ -14,6 +15,7 @@ export const DatabaseSchema = z
     feedingSessions: z.array(FeedingSessionSchema),
     pumpingSessions: z.array(PumpingSessionSchema),
     milkBatches: z.array(MilkBatchSchema),
+    settings: SettingsSchema.optional(),
   })
   .strict()
   .superRefine((db, ctx) => {

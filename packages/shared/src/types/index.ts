@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import type { NextFeeding } from "../domain/schedule.js";
 import type { DatabaseSchema } from "../schemas/database.js";
 import type {
   BottleFeedingSegmentSchema,
@@ -66,6 +67,8 @@ export type TimelineItem =
   | { kind: "pumping"; id: string; startedAt: string; pumping: PumpingWithTotal };
 
 export type Dashboard = {
+  /** Derived from feeding history and schedule settings; pumping is not considered. */
+  nextFeeding: NextFeeding;
   date: string;
   timezone: string;
   generatedAt: string;

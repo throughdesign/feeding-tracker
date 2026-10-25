@@ -181,6 +181,33 @@ GET /api/dashboard?date=YYYY-MM-DD    defaults to today in Europe/Amsterdam
 
 Returns the feeding count, measured bottle consumption (split into expressed milk and formula), breastfeeding time (left, right and total), known pumped volume plus the number of sessions with an unmeasured side, the active feeding, the most recent feeding, and a chronological timeline.
 
+### Feeding schedule
+
+```text
+GET   /api/feeding-schedule               settings + derived next feeding
+PATCH /api/feeding-schedule/settings      partial settings update
+```
+
+Settings (`FeedingScheduleSettings`, stored under `settings.feedingSchedule` in the data file; defaults apply when absent):
+
+| Field                           | Default            | Meaning                                                               |
+| ------------------------------- | ------------------ | --------------------------------------------------------------------- |
+| `dayIntervalMinutes`            | `180`              | Start-to-start interval (60–480)                                      |
+| `nightIntervalMinutes`          | `180`              | Used only when `nightModeEnabled`                                     |
+| `nightModeEnabled`              | `false`            | A longer night interval is never enabled automatically                |
+| `nightStartsAt` / `nightEndsAt` | `23:00` / `07:00`  | Local night window; start inclusive, end exclusive, may wrap midnight |
+| `timezone`                      | `Europe/Amsterdam` | Only supported value for now                                          |
+| `remindersEnabled`              | `false`            | Stored for future notifications; no reminders are sent yet            |
+
+`nextFeeding` is `{ state: "no-history" }` or `{ state: "scheduled", lastFeeding, mode, intervalMinutes, nextFeedingAt }`. It is derived, never stored:
+
+- **Next feeding = start of the latest feeding + interval.** The latest feeding is by start time, of any type, including one in progress; it's start-to-start, not end-to-start.
+- **The interval comes from the mode** (day or night) at the latest feeding's local start time.
+- **Elapsed time is used**, so across a DST change the interval is still exactly e.g. 3 real hours.
+- **Pumping sessions are ignored.**
+- **It recalculates automatically** when feedings are created, edited or deleted, or when settings change.
+- The dashboard response includes the same `nextFeeding`.
+
 ### Insights
 
 ```text
@@ -201,6 +228,19 @@ POST /api/milk-batches
 ```
 
 This is groundwork for future inventory tracking; there is no UI for it yet. A batch's usage (`consumedMl`, `offeredMl`) only counts bottle segments that explicitly reference it through `milkBatchId`. Nothing is subtracted automatically.
+
+## Next feeding
+
+The Today screen shows a **Next Feeding** card above the Log buttons:
+
+- the next feeding time (24-hour);
+- the time remaining, or how long it's overdue;
+- when the last feeding started, and the interval in use;
+- an Upcoming / Overdue / Feeding now status, labelled with text and an icon, not color alone.
+
+The remaining time is recalculated from the clock every second and when the app comes back from the background. The cog opens the schedule settings.
+
+**There are no reminders yet.** The app can't notify you when it's closed, and the settings screen says so. Scheduling lives in `packages/shared/src/domain/schedule.ts` and `FeedingScheduleService`, the extension point for future web push.
 
 ## Insights screen
 

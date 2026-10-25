@@ -129,6 +129,12 @@ export function fromZonedInputValue(value: string): string | null {
   return Number.isNaN(epoch) ? null : new Date(epoch).toISOString();
 }
 
+/** Wall-clock minutes since local midnight (0–1439) in the app timezone. */
+export function zonedMinuteOfDay(instant: string | number | Date): number {
+  const p = zonedParts(new Date(instant).getTime());
+  return p.hour * 60 + p.minute;
+}
+
 /** Current instant as a UTC ISO string. */
 export function nowIso(): string {
   return new Date().toISOString();

@@ -1,10 +1,4 @@
-import {
-  APP_TIMEZONE,
-  addDays,
-  dateKeyInZone,
-  toZonedInputValue,
-  zonedDayBounds,
-} from "../time.js";
+import { APP_TIMEZONE, addDays, dateKeyInZone, zonedDayBounds, zonedMinuteOfDay } from "../time.js";
 import type { FeedingSession, PumpingSession } from "../types/index.js";
 import { summarizeFeeding } from "./feeding.js";
 
@@ -87,12 +81,6 @@ export type Insights = {
   };
 };
 
-function wallMinute(iso: string): number {
-  const [, time] = toZonedInputValue(iso).split("T") as [string, string];
-  const [h, m] = time.split(":").map(Number) as [number, number];
-  return h * 60 + m;
-}
-
 function groupByStartDay<T extends { startedAt: string }>(items: T[], dates: Set<string>) {
   const groups = new Map<string, T[]>();
   for (const item of items) {
@@ -140,7 +128,7 @@ export function buildInsights(
       day.bottles += summary.bottle.count;
       day.breastMs += summary.breastfeeding.totalMs;
 
-      const startMinute = wallMinute(session.startedAt);
+      const startMinute = zonedMinuteOfDay(session.startedAt);
       const endIso =
         session.endedAt ?? new Date(Math.max(now, Date.parse(session.startedAt))).toISOString();
       const durationMin = Math.max(

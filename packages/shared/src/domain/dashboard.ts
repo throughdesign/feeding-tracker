@@ -8,6 +8,11 @@ import type {
 } from "../types/index.js";
 import { summarizeFeeding } from "./feeding.js";
 import { pumpingTotal } from "./pumping.js";
+import { computeNextFeeding } from "./schedule.js";
+import {
+  DEFAULT_FEEDING_SCHEDULE_SETTINGS,
+  type FeedingScheduleSettings,
+} from "../schemas/schedule.js";
 
 function withSummary(session: FeedingSession, now: number): FeedingWithSummary {
   return { ...session, summary: summarizeFeeding(session, now) };
@@ -33,6 +38,7 @@ export function buildDashboard(
   data: { feedingSessions: FeedingSession[]; pumpingSessions: PumpingSession[] },
   date: string,
   now: number = Date.now(),
+  scheduleSettings: FeedingScheduleSettings = DEFAULT_FEEDING_SCHEDULE_SETTINGS,
 ): Dashboard {
   const bounds = zonedDayBounds(date);
   const feedings = data.feedingSessions
@@ -48,6 +54,7 @@ export function buildDashboard(
     date,
     timezone: APP_TIMEZONE,
     generatedAt: new Date(now).toISOString(),
+    nextFeeding: computeNextFeeding(data.feedingSessions, scheduleSettings),
     feeding: {
       sessionCount: feedings.length,
       bottle: { count: 0, offeredMl: 0, consumedMl: 0, expressedBreastMilkMl: 0, formulaMl: 0 },

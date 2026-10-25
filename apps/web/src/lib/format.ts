@@ -52,6 +52,16 @@ export function formatClock(ms: number): string {
   return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
+/** Duration in hours and minutes, e.g. "1 h 25 min", "40 min", "3 h". */
+export function formatHoursMinutes(ms: number): string {
+  const minutes = Math.floor(Math.abs(ms) / 60_000);
+  if (minutes < 1) return "less than a minute";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (!h) return `${m} min`;
+  return m ? `${h} h ${m} min` : `${h} h`;
+}
+
 /** Relative age, e.g. "2 h 10 min ago". */
 export function formatAgo(iso: string, now: number): string {
   const minutes = Math.max(0, Math.round((now - Date.parse(iso)) / 60_000));

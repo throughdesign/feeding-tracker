@@ -3,6 +3,9 @@ import type {
   CreateFeedingSessionInput,
   CreatePumpingSessionInput,
   Dashboard,
+  FeedingScheduleSettings,
+  NextFeeding,
+  UpdateFeedingScheduleSettingsInput,
   InsightPeriod,
   Insights,
   FeedingWithSummary,
@@ -57,6 +60,14 @@ export const api = {
     request<Dashboard>(`/dashboard${date ? `?date=${encodeURIComponent(date)}` : ""}`),
 
   insights: (days: InsightPeriod) => request<Insights>(`/insights?days=${days}`),
+
+  feedingSchedule: () =>
+    request<{ settings: FeedingScheduleSettings; nextFeeding: NextFeeding }>("/feeding-schedule"),
+  updateFeedingScheduleSettings: (input: UpdateFeedingScheduleSettingsInput) =>
+    request<{ settings: FeedingScheduleSettings; nextFeeding: NextFeeding }>(
+      "/feeding-schedule/settings",
+      json("PATCH", input),
+    ),
 
   activeFeedings: () => request<FeedingWithSummary[]>("/feedings?status=active"),
   feeding: (id: string) => request<FeedingWithSummary>(`/feedings/${id}`),

@@ -1,5 +1,6 @@
 import { Module, type DynamicModule } from "@nestjs/common";
 import { DashboardModule } from "./modules/dashboard/dashboard.module.js";
+import { FeedingScheduleModule } from "./modules/feeding-schedule/feeding-schedule.module.js";
 import { FeedingModule } from "./modules/feeding/feeding.module.js";
 import { HealthController } from "./modules/health/health.controller.js";
 import { InsightsModule } from "./modules/insights/insights.module.js";
@@ -19,6 +20,7 @@ export class AppModule {
         MilkBatchesModule,
         DashboardModule,
         InsightsModule,
+        FeedingScheduleModule,
       ],
       controllers: [HealthController],
     };

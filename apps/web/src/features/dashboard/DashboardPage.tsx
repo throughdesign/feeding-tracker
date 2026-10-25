@@ -6,23 +6,16 @@ import {
   type Dashboard,
 } from "@isaac/shared";
 import { Baby, ChevronRight, Droplets, Milk, Timer } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { Button, Card, Grid, Icon, Loader, Text, View } from "reshaped";
 import { ErrorAlert } from "../../components/ErrorAlert";
 import { useNow } from "../../hooks/useNow";
-import {
-  breastLabel,
-  formatAgo,
-  formatClock,
-  formatDateKey,
-  formatMinutes,
-  formatMl,
-  formatTime,
-} from "../../lib/format";
+import { breastLabel, formatClock, formatDateKey, formatMinutes, formatMl } from "../../lib/format";
 import { useDashboard } from "../../lib/queries";
 import { Timeline } from "../timeline/Timeline";
-import { feedingTitle } from "../timeline/describe";
+import { NextFeedingCard } from "../schedule/NextFeedingCard";
+import { ScheduleSettingsModal } from "../schedule/ScheduleSettingsModal";
 
 export function Stat({
   label,
@@ -82,6 +75,7 @@ export function DashboardPage() {
   const live = Boolean(query.data?.activeFeeding);
   const now = useNow(live ? 1000 : 30_000);
   const today = dateKeyInZone(now);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
 
   return (
     <View gap={6}>
@@ -99,18 +93,10 @@ export function DashboardPage() {
         <>
           <ActiveFeedingCard dashboard={query.data} now={now} />
 
-          {query.data.mostRecentFeeding && !query.data.activeFeeding && (
-            <Text variant="body-1">
-              Last feed{" "}
-              <Text as="span" weight="bold" numeric>
-                {formatTime(query.data.mostRecentFeeding.startedAt)}
-              </Text>{" "}
-              <Text as="span" color="neutral-faded">
-                ({formatAgo(query.data.mostRecentFeeding.startedAt, now)} ·{" "}
-                {feedingTitle(query.data.mostRecentFeeding).toLowerCase()})
-              </Text>
-            </Text>
-          )}
+          <NextFeedingCard
+            nextFeeding={query.data.nextFeeding}
+            onOpenSettings={() => setScheduleOpen(true)}
+          />
 
           <View direction="row" gap={3}>
             <View.Item columns={6}>
@@ -156,6 +142,7 @@ export function DashboardPage() {
           </View>
         </>
       )}
+      <ScheduleSettingsModal active={scheduleOpen} onClose={() => setScheduleOpen(false)} />
     </View>
   );
 }

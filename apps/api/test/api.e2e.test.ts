@@ -1,5 +1,6 @@
 import type { INestApplication } from "@nestjs/common";
 import type { Dashboard, FeedingWithSummary, Insights, PumpingWithTotal } from "@isaac/shared";
+import { writeFile } from "node:fs/promises";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../src/create-app.js";
@@ -340,5 +341,107 @@ describe("API integration", () => {
     await api.get("/api/insights?end=2026-02-30").expect(400);
     const defaults = await api.get("/api/insights").expect(200);
     expect(defaults.body.period.days).toBe(7);
+  });
+
+  it("derives the next feeding, recalculates on edits and deletes, and persists settings", async () => {
+    let api = await start();
+    const empty = await api.get("/api/feeding-schedule").expect(200);
+    expect(empty.body.nextFeeding.state).toBe("no-history");
+    expect(empty.body.settings).toMatchObject({
+      dayIntervalMinutes: 180,
+      nightModeEnabled: false,
+      timezone: "Europe/Amsterdam",
+    });
+
+    const bottleAt = (iso: string) => ({
+      status: "completed",
+      segments: [
+        {
+          type: "bottle",
+          milkType: "formula",
+          offeredMl: 60,
+          consumedMl: 50,
+          startedAt: iso,
+          endedAt: iso,
+        },
+      ],
+    });
+    const first = await api
+      .post("/api/feedings")
+      .send(bottleAt(at("06:00")))
+      .expect(201);
+    const latest = await api
+      .post("/api/feedings")
+      .send(bottleAt(at("09:00")))
+      .expect(201);
+
+    let schedule = await api.get("/api/feeding-schedule").expect(200);
+    expect(schedule.body.nextFeeding).toMatchObject({
+      state: "scheduled",
+      nextFeedingAt: at("12:00"),
+      intervalMinutes: 180,
+    });
+
+    // Pumping does not reset the schedule.
+    await api
+      .post("/api/pumping-sessions")
+      .send({ startedAt: at("10:00"), endedAt: at("10:20"), leftVolumeMl: 40 })
+      .expect(201);
+    schedule = await api.get("/api/feeding-schedule").expect(200);
+    expect(schedule.body.nextFeeding.lastFeeding.id).toBe(latest.body.id);
+
+    // Editing the latest feeding moves the target.
+    await api
+      .patch(`/api/feedings/${latest.body.id}`)
+      .send(bottleAt(at("09:30")))
+      .expect(200);
+    schedule = await api.get("/api/feeding-schedule").expect(200);
+    expect(schedule.body.nextFeeding.nextFeedingAt).toBe(at("12:30"));
+
+    // Deleting it falls back to the previous feeding.
+    await api.delete(`/api/feedings/${latest.body.id}`).expect(204);
+    const dashboard = await api.get("/api/dashboard?date=2026-10-25").expect(200);
+    expect(dashboard.body.nextFeeding).toMatchObject({
+      lastFeeding: { id: first.body.id },
+      nextFeedingAt: at("09:00"),
+    });
+
+    // Settings validate and persist across a restart.
+    await api.patch("/api/feeding-schedule/settings").send({ dayIntervalMinutes: 20 }).expect(400);
+    await api.patch("/api/feeding-schedule/settings").send({ timezone: "UTC" }).expect(400);
+    await api
+      .patch("/api/feeding-schedule/settings")
+      .send({ nightModeEnabled: true, nightStartsAt: "22:00", nightEndsAt: "22:00" })
+      .expect(400);
+    const updated = await api
+      .patch("/api/feeding-schedule/settings")
+      .send({ dayIntervalMinutes: 150, nightModeEnabled: true, nightIntervalMinutes: 240 })
+      .expect(200);
+    expect(updated.body.nextFeeding.nextFeedingAt).toBe(at("08:30"));
+
+    await app.close();
+    api = await start();
+    const reloaded = await api.get("/api/feeding-schedule").expect(200);
+    expect(reloaded.body.settings).toMatchObject({
+      dayIntervalMinutes: 150,
+      nightModeEnabled: true,
+      nightIntervalMinutes: 240,
+    });
+  });
+
+  it("loads data files written before schedule settings existed", async () => {
+    await writeFile(
+      tmp.file,
+      JSON.stringify({
+        schemaVersion: 1,
+        people: [],
+        feedingSessions: [],
+        pumpingSessions: [],
+        milkBatches: [],
+      }),
+    );
+    const api = await start();
+    const res = await api.get("/api/feeding-schedule").expect(200);
+    expect(res.body.settings.dayIntervalMinutes).toBe(180);
   });
 });
